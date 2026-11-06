@@ -8,6 +8,7 @@ permissions:
 
 jobs:
   check_autobuild_logic:
+    if: github.repository == 'clash-verge-rev/clash-verge-rev'
     name: Check Autobuild Should Run Logic
     runs-on: ubuntu-latest
     steps:

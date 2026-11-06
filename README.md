@@ -1,3 +1,59 @@
+## Custom fork integration
+
+The development baseline is the official stable `main` branch, currently
+`v2.5.10` at `c83f7ad529c7c9cb3d2d54a0955ef8c1b22a411b`. The local checkout is
+single-branch and shallow, tracking `upstream/main`, not `dev`. Source version
+files keep the official stable version unchanged, currently `2.5.10`.
+Only GitHub build checkouts use `2.5.10-Plus`; do not commit the CI suffix.
+
+Fetch official updates with `git fetch upstream main`. Commit your custom work
+before merging the next stable release; if a merge base is missing, deepen the
+history with `git fetch --deepen=50 upstream main` as needed. Do not reset or
+replace the custom tree with the upstream tree. Moving to a new stable release
+still requires resolving conflicts and validating the custom changes.
+
+The custom `Release Plus` workflow (`release-plus.yml`) runs on pushes to `main` or manual dispatch
+on `main`. It reads the official version from the checked-out `package.json`,
+appends `-Plus`, and updates all four version files only in each build checkout.
+Version discovery does not query upstream releases. Merge and verify the next
+stable source before publishing its version. CI version changes are not pushed back.
+
+Only Windows AMD64 NSIS and Linux AMD64 DEB/RPM installers are built. All three
+packages and signatures must exist before publication. The release is marked
+stable despite the SemVer `-Plus` suffix, and contains `latest.json` for the
+client updater. Official workflow files and helpers are retained. Their entry
+jobs require `github.repository == 'clash-verge-rev/clash-verge-rev'`; dependent
+jobs follow the existing dependency chain. The generated AI review workflow is
+changed through its Markdown source and recompiled. In this fork official jobs
+are skipped, including code checks; only `release-plus.yml` runs, restricted to
+`Nefelibata-D/Clash-Verge-Rev` on `main`. No manual GitHub disabling is needed.
+GitHub may still display skipped workflow runs. When syncing upstream, retain
+these entry conditions and add them to any new independent official workflows.
+An already published version is skipped rather than replacing installed update
+artifacts; a draft from the same commit can be retried. Updating the source's
+`package.json` version produces a new `vX.Y.Z-Plus` release on the next run.
+
+This checkout uses `Nefelibata-D/Mihomo` for bundled and in-app core updates,
+and `Nefelibata-D/Clash-Verge-Rev` for application updates.
+
+- Core releases follow the local Mihomo `build.yml` contract: the latest release
+  tag is the stable version; diagnostic builds add `-beta` to that version in
+  the same release. Assets are `pass-windows-amd64-<version>.zip` and
+  `pass-linux-amd64-<version>.gz`. The existing Alpha core slot selects the
+  diagnostic beta build. Other platforms need matching custom core artifacts
+  and download mappings before they can be built or upgraded.
+- Subscription YAML remains a generic mapping. `weighted-sticky` and
+  `site-blacklist` reach the selected core, which performs the real `-t` check.
+  The editor also accepts the additional strategy. Use a current custom core;
+  old builds may reject the newer blacklist `rules` format.
+- Application updates use `releases/latest/download/latest.json` from the custom
+  repository. `scripts/updater-plus.mjs` assembles it from the signed build artifacts.
+  The custom signing public key is configured in `src-tauri/tauri.conf.json`
+  and each `src-tauri/webview2.*.json`. Keep the matching private key and password
+  outside the repository, and configure the release repository secrets
+  `TAURI_PRIVATE_KEY` and `TAURI_KEY_PASSWORD`; never commit them. This source
+  change does not install a new client or replace a running core.
+
 <h1 align="center">
   <img src="./src-tauri/icons/icon.png" alt="Clash" width="128" />
   <br>

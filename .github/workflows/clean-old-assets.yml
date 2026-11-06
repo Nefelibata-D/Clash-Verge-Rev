@@ -34,6 +34,7 @@ env:
 
 jobs:
   check_current_version:
+    if: github.repository == 'clash-verge-rev/clash-verge-rev'
     name: Check Current Version and Commit
     runs-on: ubuntu-latest
     outputs:

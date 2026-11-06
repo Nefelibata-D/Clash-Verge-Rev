@@ -15,6 +15,8 @@ on:
     types: [opened, synchronize]
   workflow_dispatch:
 
+if: github.repository == 'clash-verge-rev/clash-verge-rev'
+
 checkout: false
 # Cost guardrails sized from measured runs (median 22 credits, max 41; median
 # 6 tool turns, max 14). The per-run caps stop runaway sessions only; normal

@@ -11,6 +11,7 @@ env:
 
 jobs:
   audit:
+    if: github.repository == 'clash-verge-rev/clash-verge-rev'
     strategy:
       fail-fast: false
       matrix:

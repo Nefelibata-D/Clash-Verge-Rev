@@ -30,6 +30,7 @@ permissions:
 
 jobs:
   check:
+    if: github.repository == 'clash-verge-rev/clash-verge-rev'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

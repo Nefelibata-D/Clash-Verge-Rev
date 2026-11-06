@@ -22,9 +22,8 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 
-const RELEASE_VERSION_URL: &str = "https://github.com/MetaCubeX/mihomo/releases/latest/download/version.txt";
-const ALPHA_BASE_URL: &str = "https://github.com/MetaCubeX/mihomo/releases/download/Prerelease-Alpha";
-const RELEASE_DOWNLOAD_URL: &str = "https://github.com/MetaCubeX/mihomo/releases/download";
+const RELEASE_VERSION_URL: &str = "https://api.github.com/repos/Nefelibata-D/Mihomo/releases/latest";
+const RELEASE_DOWNLOAD_URL: &str = "https://github.com/Nefelibata-D/Mihomo/releases/download";
 const VERSION_TIMEOUT_SECS: u64 = 20;
 const PACKAGE_TIMEOUT_SECS: u64 = 300;
 /// Well above any real core package, low enough that a wrong response cannot exhaust memory.
@@ -173,68 +172,47 @@ fn managed_core_path(core: &str) -> Result<PathBuf> {
 
 /// Pins the package to the resolved version, so a release moving on mid-upgrade cannot 404.
 fn package_url(alpha: bool, version: &str) -> Result<std::string::String> {
-    let asset = asset_base_name(alpha)?;
+    let asset = asset_base_name()?;
     let extension = if cfg!(windows) { "zip" } else { "gz" };
-    Ok(if alpha {
-        format!("{ALPHA_BASE_URL}/{asset}-{version}.{extension}")
+    let tag = if alpha {
+        version
+            .strip_suffix("-beta")
+            .context("diagnostic core version must end in -beta")?
     } else {
-        format!("{RELEASE_DOWNLOAD_URL}/{version}/{asset}-{version}.{extension}")
-    })
+        version
+    };
+    Ok(format!("{RELEASE_DOWNLOAD_URL}/{tag}/{asset}-{version}.{extension}"))
 }
 
-/// Mirrors the asset map in `scripts/prebuild.mjs` so an upgrade keeps the build variant
-/// the bundled sidecar was taken from.
-fn asset_base_name(alpha: bool) -> Result<&'static str> {
-    let arch = std::env::consts::ARCH;
-    let unsupported = || anyhow!("no mihomo release asset for {}-{arch}", std::env::consts::OS);
-
-    let name = if cfg!(target_os = "windows") {
-        match arch {
-            "x86_64" => "mihomo-windows-amd64-v2",
-            "x86" => "mihomo-windows-386",
-            "aarch64" => "mihomo-windows-arm64",
-            _ => return Err(unsupported()),
-        }
-    } else if cfg!(target_os = "macos") {
-        match arch {
-            "x86_64" if alpha => "mihomo-darwin-amd64-v1-go122",
-            "x86_64" => "mihomo-darwin-amd64-v2-go122",
-            "aarch64" => "mihomo-darwin-arm64-go122",
-            _ => return Err(unsupported()),
-        }
-    } else {
-        match arch {
-            "x86_64" => "mihomo-linux-amd64-v2",
-            "x86" => "mihomo-linux-386",
-            "aarch64" => "mihomo-linux-arm64",
-            "arm" => "mihomo-linux-armv7",
-            "riscv64" => "mihomo-linux-riscv64",
-            "loongarch64" => "mihomo-linux-loong64",
-            _ => return Err(unsupported()),
-        }
-    };
-    Ok(name)
+/// Matches the Linux/Windows AMD64 artifacts published by the custom core.
+fn asset_base_name() -> Result<&'static str> {
+    match (std::env::consts::OS, std::env::consts::ARCH) {
+        ("windows", "x86_64") => Ok("pass-windows-amd64"),
+        ("linux", "x86_64") => Ok("pass-linux-amd64"),
+        (os, arch) => bail!("no custom mihomo release asset for {os}-{arch}"),
+    }
 }
 
 /// Returns the proxy that reached GitHub so the package download reuses it.
 #[tracing::instrument(skip_all, level = "debug", fields(alpha))]
 async fn resolve_latest_version(alpha: bool) -> Result<(ProxyType, std::string::String)> {
-    let url = if alpha {
-        format!("{ALPHA_BASE_URL}/version.txt")
-    } else {
-        RELEASE_VERSION_URL.to_owned()
-    };
+    let url = RELEASE_VERSION_URL;
     let mut last_error = None;
 
     for proxy in [ProxyType::Localhost, ProxyType::System, ProxyType::None] {
         let attempt = NetworkManager::new()
-            .get(&url, proxy, Some(VERSION_TIMEOUT_SECS), None, false)
+            .get(url, proxy, Some(VERSION_TIMEOUT_SECS), None, false)
             .await;
 
         match attempt {
             Ok(response) if response.status().is_success() => {
                 // An error page answered with 200 must not become a version, nor reach the URL.
-                let version = response.text().trim().to_owned();
+                let release: serde_json::Value =
+                    serde_json::from_str(response.text()).context("invalid custom core release response")?;
+                let tag = release["tag_name"]
+                    .as_str()
+                    .context("custom core release has no tag_name")?;
+                let version = if alpha { format!("{tag}-beta") } else { tag.to_owned() };
                 if !is_usable_version(&version) {
                     logging!(
                         warn,
@@ -485,15 +463,20 @@ mod tests {
         }
     }
 
+    #[cfg(all(target_arch = "x86_64", any(target_os = "windows", target_os = "linux")))]
     #[test]
     fn package_urls_pin_the_resolved_version() {
-        let release = package_url(false, "v1.19.30").unwrap_or_default();
-        let alpha = package_url(true, "alpha-c0e43eb").unwrap_or_default();
-        assert!(release.contains("/releases/download/v1.19.30/"), "{release}");
+        let release = package_url(false, "v1.19.30-pass").unwrap_or_default();
+        let alpha = package_url(true, "v1.19.30-pass-beta").unwrap_or_default();
+        assert!(release.contains("/releases/download/v1.19.30-pass/"), "{release}");
         assert!(
-            release.ends_with("-v1.19.30.gz") || release.ends_with("-v1.19.30.zip"),
+            release.ends_with("-v1.19.30-pass.gz") || release.ends_with("-v1.19.30-pass.zip"),
             "{release}"
         );
-        assert!(alpha.contains("/Prerelease-Alpha/"), "{alpha}");
+        assert!(alpha.contains("/releases/download/v1.19.30-pass/"), "{alpha}");
+        assert!(
+            alpha.ends_with("-v1.19.30-pass-beta.gz") || alpha.ends_with("-v1.19.30-pass-beta.zip"),
+            "{alpha}"
+        );
     }
 }

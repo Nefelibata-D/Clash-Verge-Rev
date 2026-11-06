@@ -159,83 +159,29 @@ async function updateHashCache(targetPath) {
   }
 }
 
-// Mihomo release maps
-const META_ALPHA_VERSION_URL =
-  'https://github.com/MetaCubeX/mihomo/releases/download/Prerelease-Alpha/version.txt'
-const META_ALPHA_URL_PREFIX = `https://github.com/MetaCubeX/mihomo/releases/download/Prerelease-Alpha`
-let META_ALPHA_VERSION
-
+// Custom core releases contain both stable and diagnostic beta assets.
 const META_VERSION_URL =
-  'https://github.com/MetaCubeX/mihomo/releases/latest/download/version.txt'
-const META_URL_PREFIX = `https://github.com/MetaCubeX/mihomo/releases/download`
+  'https://api.github.com/repos/Nefelibata-D/Mihomo/releases/latest'
+const META_URL_PREFIX =
+  'https://github.com/Nefelibata-D/Mihomo/releases/download'
 let META_VERSION
-
-const META_ALPHA_MAP = {
-  'win32-x64': 'mihomo-windows-amd64-v2',
-  'win32-ia32': 'mihomo-windows-386',
-  'win32-arm64': 'mihomo-windows-arm64',
-  'darwin-x64': 'mihomo-darwin-amd64-v1-go122',
-  'darwin-arm64': 'mihomo-darwin-arm64-go122',
-  'linux-x64': 'mihomo-linux-amd64-v2',
-  'linux-ia32': 'mihomo-linux-386',
-  'linux-arm64': 'mihomo-linux-arm64',
-  'linux-arm': 'mihomo-linux-armv7',
-  'linux-riscv64': 'mihomo-linux-riscv64',
-  'linux-loong64': 'mihomo-linux-loong64',
-}
-
+let META_ALPHA_VERSION
 const META_MAP = {
-  'win32-x64': 'mihomo-windows-amd64-v2',
-  'win32-ia32': 'mihomo-windows-386',
-  'win32-arm64': 'mihomo-windows-arm64',
-  'darwin-x64': 'mihomo-darwin-amd64-v2-go122',
-  'darwin-arm64': 'mihomo-darwin-arm64-go122',
-  'linux-x64': 'mihomo-linux-amd64-v2',
-  'linux-ia32': 'mihomo-linux-386',
-  'linux-arm64': 'mihomo-linux-arm64',
-  'linux-arm': 'mihomo-linux-armv7',
-  'linux-riscv64': 'mihomo-linux-riscv64',
-  'linux-loong64': 'mihomo-linux-loong64',
+  'win32-x64': 'pass-windows-amd64',
+  'linux-x64': 'pass-linux-amd64',
 }
+const META_ALPHA_MAP = META_MAP
 
 // Release discovery
 async function getLatestAlphaVersion() {
-  if (!FORCE) {
-    const cached = await getCachedVersion('META_ALPHA_VERSION')
-    if (cached) {
-      META_ALPHA_VERSION = cached
-      return
-    }
-  }
-  const options = {}
-  const httpProxy =
-    process.env.HTTP_PROXY ||
-    process.env.http_proxy ||
-    process.env.HTTPS_PROXY ||
-    process.env.https_proxy
-  if (httpProxy) options.agent = new HttpsProxyAgent(httpProxy)
-
-  try {
-    const response = await fetch(META_ALPHA_VERSION_URL, {
-      ...options,
-      method: 'GET',
-    })
-    if (!response.ok)
-      throw new Error(
-        `Failed to fetch ${META_ALPHA_VERSION_URL}: ${response.status}`,
-      )
-    META_ALPHA_VERSION = (await response.text()).trim()
-    log_info(`Latest alpha version: ${META_ALPHA_VERSION}`)
-    await setCachedVersion('META_ALPHA_VERSION', META_ALPHA_VERSION)
-  } catch (err) {
-    log_error('Error fetching latest alpha version:', err.message)
-    process.exit(1)
-  }
+  if (!META_VERSION) await getLatestReleaseVersion()
+  META_ALPHA_VERSION = `${META_VERSION}-beta`
 }
 
 async function getLatestReleaseVersion() {
+  if (META_VERSION) return
   if (!FORCE) {
-    const cached = await getCachedVersion('META_VERSION')
+    const cached = await getCachedVersion(META_VERSION_URL)
     if (cached) {
       META_VERSION = cached
       return
@@ -256,9 +202,15 @@ async function getLatestReleaseVersion() {
     })
     if (!response.ok)
       throw new Error(`Failed to fetch ${META_VERSION_URL}: ${response.status}`)
-    META_VERSION = (await response.text()).trim()
+    META_VERSION = (await response.json()).tag_name
+    if (
+      typeof META_VERSION !== 'string' ||
+      !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/.test(META_VERSION)
+    ) {
+      throw new Error('Custom core release has an invalid tag_name')
+    }
     log_info(`Latest release version: ${META_VERSION}`)
-    await setCachedVersion('META_VERSION', META_VERSION)
+    await setCachedVersion(META_VERSION_URL, META_VERSION)
   } catch (err) {
     log_error('Error fetching latest release version:', err.message)
     process.exit(1)
@@ -281,7 +233,7 @@ function clashMetaAlpha() {
     targetFile: `verge-mihomo-alpha-${SIDECAR_HOST}${isWin ? '.exe' : ''}`,
     exeFile: `${name}${isWin ? '.exe' : ''}`,
     zipFile: `${name}-${META_ALPHA_VERSION}.${urlExt}`,
-    downloadURL: `${META_ALPHA_URL_PREFIX}/${name}-${META_ALPHA_VERSION}.${urlExt}`,
+    downloadURL: `${META_URL_PREFIX}/${META_VERSION}/${name}-${META_ALPHA_VERSION}.${urlExt}`,
   }
 }
 

@@ -38,6 +38,9 @@
 <details>
 <summary><strong> ✨ 新增功能 </strong></summary>
 
+- Add custom Mihomo strategy support and use the Nefelibata-D core and application update sources.
+- Publish Windows and Linux AMD64 installers with the source version plus `-Plus`.
+
 
 </details>
 

@@ -18,6 +18,7 @@ permissions:
 
 jobs:
   clippy:
+    if: github.repository == 'clash-verge-rev/clash-verge-rev'
     strategy:
       fail-fast: false
       matrix:

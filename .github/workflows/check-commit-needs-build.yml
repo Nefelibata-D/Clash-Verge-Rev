@@ -45,6 +45,7 @@ env:
 
 jobs:
   check_commit:
+    if: github.repository == 'clash-verge-rev/clash-verge-rev'
     name: Check Commit Needs Build
     runs-on: ubuntu-latest
     outputs:

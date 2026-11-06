@@ -28,7 +28,7 @@ concurrency:
 jobs:
   prepare:
     if: >-
-      ${{ github.event_name == 'workflow_dispatch' ||
+      ${{ github.repository == 'clash-verge-rev/clash-verge-rev' && (github.event_name == 'workflow_dispatch' ||
           (github.event.pull_request.head.repo.full_name == github.repository &&
            github.event.pull_request.user.login == 'github-actions[bot]' &&
            ((startsWith(github.event.pull_request.head.ref, 'release/v') &&
@@ -39,7 +39,7 @@ jobs:
              github.event.changes.body && github.event.pull_request.state == 'open' &&
              (contains(github.event.pull_request.body, '[x] Refresh this PR from latest dev') ||
               contains(github.event.pull_request.body, '[x] Use the next minor version') !=
-              contains(github.event.changes.body.from, '[x] Use the next minor version'))))) }}
+              contains(github.event.changes.body.from, '[x] Use the next minor version')))))) }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

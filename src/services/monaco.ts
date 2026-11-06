@@ -94,6 +94,14 @@ export const loadMonacoEditor = () => {
           patchCreateWebWorker(monaco)
           monaco.typescript.javascriptDefaults.addExtraLib(pac, 'pac.d.ts')
 
+          const strategy =
+            metaSchema.definitions['proxy-groups'].definitions['load-balance']
+              .allOf[1].properties!.strategy!
+          strategy.enum.push('weighted-sticky')
+          strategy.markdownEnumDescriptions.push(
+            'Weighted site bindings provided by the custom Mihomo core',
+          )
+
           configureMonacoYaml(monaco, {
             validate: true,
             enableSchemaRequest: true,

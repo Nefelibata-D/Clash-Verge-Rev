@@ -32,6 +32,7 @@ env:
 
 jobs:
   contract-parity:
+    if: github.repository == 'clash-verge-rev/clash-verge-rev'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7

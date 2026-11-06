@@ -17,6 +17,7 @@ concurrency:
 jobs:
   # The job MUST be called 'copilot-setup-steps' to be recognized by GitHub Copilot Agent
   copilot-setup-steps:
+    if: github.repository == 'clash-verge-rev/clash-verge-rev'
     name: Copilot Setup Steps
     runs-on: ubuntu-latest
 

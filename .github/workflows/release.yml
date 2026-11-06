@@ -21,12 +21,12 @@ jobs:
   prepare_release:
     name: Approve Snapshot and Prepare Draft Release
     if: >-
-      ${{ github.event_name == 'push' ||
+      ${{ github.repository == 'clash-verge-rev/clash-verge-rev' && (github.event_name == 'push' ||
           (github.event.changes.body &&
            github.event.pull_request.head.repo.full_name == github.repository &&
            github.event.pull_request.user.login == 'github-actions[bot]' &&
            startsWith(github.event.pull_request.head.ref, 'publish/v') &&
-           contains(github.event.pull_request.body, '[x] Publish this approved release')) }}
+           contains(github.event.pull_request.body, '[x] Publish this approved release'))) }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
