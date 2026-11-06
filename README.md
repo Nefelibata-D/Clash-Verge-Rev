@@ -23,7 +23,7 @@
 - 客户端更新来自 `Nefelibata-D/Clash-Verge-Rev`，使用签名安装包和 `latest.json` 更新清单。
 - 保留上游主题、配置增强、系统代理、TUN、节点与规则管理、WebDAV 备份等功能。
 
-定制内核的普通版和诊断 beta 版位于同一个 Release。客户端原有的 Alpha 内核入口对应诊断 beta 版；其包名为 `pass-windows-amd64-<version>.zip` 或 `pass-linux-amd64-<version>.gz`。新版黑名单 `rules` 字段需要较新的定制内核。
+定制内核的普通版和诊断 beta 版位于同一个 Release。客户端原有的 Alpha 内核入口对应诊断 beta 版；其包名为 `mihomo-windows-amd64-<version>.zip` 或 `mihomo-linux-amd64-<version>.gz`。新版黑名单 `rules` 字段需要较新的定制内核。
 
 ## 版本与自动发布
 

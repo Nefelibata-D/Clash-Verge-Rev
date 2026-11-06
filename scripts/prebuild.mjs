@@ -167,8 +167,8 @@ const META_URL_PREFIX =
 let META_VERSION
 let META_ALPHA_VERSION
 const META_MAP = {
-  'win32-x64': 'pass-windows-amd64',
-  'linux-x64': 'pass-linux-amd64',
+  'win32-x64': 'mihomo-windows-amd64',
+  'linux-x64': 'mihomo-linux-amd64',
 }
 const META_ALPHA_MAP = META_MAP
 

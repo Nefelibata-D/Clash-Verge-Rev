@@ -187,8 +187,8 @@ fn package_url(alpha: bool, version: &str) -> Result<std::string::String> {
 /// Matches the Linux/Windows AMD64 artifacts published by the custom core.
 fn asset_base_name() -> Result<&'static str> {
     match (std::env::consts::OS, std::env::consts::ARCH) {
-        ("windows", "x86_64") => Ok("pass-windows-amd64"),
-        ("linux", "x86_64") => Ok("pass-linux-amd64"),
+        ("windows", "x86_64") => Ok("mihomo-windows-amd64"),
+        ("linux", "x86_64") => Ok("mihomo-linux-amd64"),
         (os, arch) => bail!("no custom mihomo release asset for {os}-{arch}"),
     }
 }
@@ -466,16 +466,16 @@ mod tests {
     #[cfg(all(target_arch = "x86_64", any(target_os = "windows", target_os = "linux")))]
     #[test]
     fn package_urls_pin_the_resolved_version() {
-        let release = package_url(false, "v1.19.30-pass").unwrap_or_default();
-        let alpha = package_url(true, "v1.19.30-pass-beta").unwrap_or_default();
-        assert!(release.contains("/releases/download/v1.19.30-pass/"), "{release}");
+        let release = package_url(false, "v1.19.33.1").unwrap_or_default();
+        let alpha = package_url(true, "v1.19.33.1-beta").unwrap_or_default();
+        assert!(release.contains("/releases/download/v1.19.33.1/"), "{release}");
         assert!(
-            release.ends_with("-v1.19.30-pass.gz") || release.ends_with("-v1.19.30-pass.zip"),
+            release.ends_with("-v1.19.33.1.gz") || release.ends_with("-v1.19.33.1.zip"),
             "{release}"
         );
-        assert!(alpha.contains("/releases/download/v1.19.30-pass/"), "{alpha}");
+        assert!(alpha.contains("/releases/download/v1.19.33.1/"), "{alpha}");
         assert!(
-            alpha.ends_with("-v1.19.30-pass-beta.gz") || alpha.ends_with("-v1.19.30-pass-beta.zip"),
+            alpha.ends_with("-v1.19.33.1-beta.gz") || alpha.ends_with("-v1.19.33.1-beta.zip"),
             "{alpha}"
         );
     }
