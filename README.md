@@ -1,197 +1,104 @@
-## Custom fork integration
+# Clash Verge Rev Plus
 
-The development baseline is the official stable `main` branch, currently
-`v2.5.10` at `c83f7ad529c7c9cb3d2d54a0955ef8c1b22a411b`. The local checkout is
-single-branch and shallow, tracking `upstream/main`, not `dev`. Source version
-files keep the official stable version unchanged, currently `2.5.10`.
-Only GitHub build checkouts use `2.5.10-Plus`; do not commit the CI suffix.
+基于 [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev) 官方稳定版的个人定制客户端，搭配 [定制 Mihomo](https://github.com/Nefelibata-D/Mihomo) 使用。
 
-Fetch official updates with `git fetch upstream main`. Commit your custom work
-before merging the next stable release; if a merge base is missing, deepen the
-history with `git fetch --deepen=50 upstream main` as needed. Do not reset or
-replace the custom tree with the upstream tree. Moving to a new stable release
-still requires resolving conflicts and validating the custom changes.
+沿用上游的 Rust、Tauri、React 界面及配置管理能力，增加定制内核配置支持和独立更新来源。
 
-The custom `Release Plus` workflow (`release-plus.yml`) runs on pushes to `main` or manual dispatch
-on `main`. It reads the official version from the checked-out `package.json`,
-appends `-Plus`, and updates all four version files only in each build checkout.
-Version discovery does not query upstream releases. Merge and verify the next
-stable source before publishing its version. CI version changes are not pushed back.
+## 下载与平台
 
-Only Windows AMD64 NSIS and Linux AMD64 DEB/RPM installers are built. All three
-packages and signatures must exist before publication. The release is marked
-stable despite the SemVer `-Plus` suffix, and contains `latest.json` for the
-client updater. Official workflow files and helpers are retained. Their entry
-jobs require `github.repository == 'clash-verge-rev/clash-verge-rev'`; dependent
-jobs follow the existing dependency chain. The generated AI review workflow is
-changed through its Markdown source and recompiled. In this fork official jobs
-are skipped, including code checks; only `release-plus.yml` runs, restricted to
-`Nefelibata-D/Clash-Verge-Rev` on `main`. No manual GitHub disabling is needed.
-GitHub may still display skipped workflow runs. When syncing upstream, retain
-these entry conditions and add them to any new independent official workflows.
-An already published version is skipped rather than replacing installed update
-artifacts; a draft from the same commit can be retried. Updating the source's
-`package.json` version produces a new `vX.Y.Z-Plus` release on the next run.
+安装包发布在[本仓库 Releases](https://github.com/Nefelibata-D/Clash-Verge-Rev/releases)。
 
-This checkout uses `Nefelibata-D/Mihomo` for bundled and in-app core updates,
-and `Nefelibata-D/Clash-Verge-Rev` for application updates.
+| 平台 | 架构 | 安装包 |
+| --- | --- | --- |
+| Windows | x86-64 / AMD64 | NSIS `.exe` |
+| Linux | x86-64 / AMD64 | `.deb`、`.rpm` |
 
-- Core releases follow the local Mihomo `build.yml` contract: the latest release
-  tag is the stable version; diagnostic builds add `-beta` to that version in
-  the same release. Assets are `pass-windows-amd64-<version>.zip` and
-  `pass-linux-amd64-<version>.gz`. The existing Alpha core slot selects the
-  diagnostic beta build. Other platforms need matching custom core artifacts
-  and download mappings before they can be built or upgraded.
-- Subscription YAML remains a generic mapping. `weighted-sticky` and
-  `site-blacklist` reach the selected core, which performs the real `-t` check.
-  The editor also accepts the additional strategy. Use a current custom core;
-  old builds may reject the newer blacklist `rules` format.
-- Application updates use `releases/latest/download/latest.json` from the custom
-  repository. `scripts/updater-plus.mjs` assembles it from the signed build artifacts.
-  The custom signing public key is configured in `src-tauri/tauri.conf.json`
-  and each `src-tauri/webview2.*.json`. Keep the matching private key and password
-  outside the repository, and configure the release repository secrets
-  `TAURI_PRIVATE_KEY` and `TAURI_KEY_PASSWORD`; never commit them. This source
-  change does not install a new client or replace a running core.
+当前发布流程只构建上述平台，不构建 macOS、ARM、32 位 x86 或内置 WebView2 版本。
 
-<h1 align="center">
-  <img src="./src-tauri/icons/icon.png" alt="Clash" width="128" />
-  <br>
-  Continuation of <a href="https://github.com/zzzgydi/clash-verge">Clash Verge</a>
-  <br>
-</h1>
+## 定制内容
 
-<h3 align="center">
-A Clash Meta GUI based on <a href="https://github.com/tauri-apps/tauri">Tauri</a>.
-</h3>
+- 使用 `Nefelibata-D/Mihomo` 提供内置内核与应用内内核更新。
+- 保留订阅中的 `weighted-sticky`、`site-blacklist` 等定制字段，并为编辑器补充策略识别。
+- 配置实际由选中的 Mihomo 内核执行 `-t` 校验；需要支持这些字段的定制内核。
+- 客户端更新来自 `Nefelibata-D/Clash-Verge-Rev`，使用签名安装包和 `latest.json` 更新清单。
+- 保留上游主题、配置增强、系统代理、TUN、节点与规则管理、WebDAV 备份等功能。
 
-<p align="center">
-  Languages:
-  <a href="./docs/README_en.md">English</a> ·
-  <a href="./docs/README_es.md">Español</a> ·
-  <a href="./docs/README_fa.md">فارسی</a> ·
-  <a href="./docs/README_ja.md">日本語</a> ·
-  <a href="./docs/README_ko.md">한국어</a> ·
-  <a href="./docs/README_pt.md">Português</a> ·
-  <a href="./docs/README_ru.md">Русский</a> ·
-  <a href="./README.md">简体中文</a>
-</p>
+定制内核的普通版和诊断 beta 版位于同一个 Release。客户端原有的 Alpha 内核入口对应诊断 beta 版；其包名为 `pass-windows-amd64-<version>.zip` 或 `pass-linux-amd64-<version>.gz`。新版黑名单 `rules` 字段需要较新的定制内核。
 
-## Preview
+## 版本与自动发布
 
-| Dark                             | Light                             |
-| -------------------------------- | --------------------------------- |
-| ![预览](./docs/preview_dark.png) | ![预览](./docs/preview_light.png) |
+源码以官方 `main` 稳定分支为基础，当前基线为 `v2.5.10`（`c83f7ad`）。源码中的版本号保持官方值，例如 `2.5.10`。
 
-## Install
+[Release Plus](.github/workflows/release-plus.yml) 只在推送 `main` 且 `package.json` 版本号变化时自动构建发布。README、其他源码改动不会触发；只修改依赖但版本号不变时，版本检查后跳过构建。首次推送不自动发布，首次发布或失败重试可手动触发。
 
-请到发布页面下载对应的安装包：[Release page](https://github.com/clash-verge-rev/clash-verge-rev/releases)<br>
-Go to the [Release page](https://github.com/clash-verge-rev/clash-verge-rev/releases) to download the corresponding installation package<br>
-Supports Windows (x64/x86), Linux (x64/arm64) and macOS 11+ (intel/apple).
-支持 Windows (x64/x86)、Linux (x64/arm64) 和 macOS 11+ (intel/apple)。
+发布流程：
 
-#### 我应当怎样选择发行版
+1. 读取当前源码 `package.json` 的版本号，不联网查询官方版本。
+2. 仅在 CI 构建工作区中，将四处版本信息统一改成 `2.5.10-Plus` 这样的版本；不提交回仓库。
+3. 构建 Windows 和 Linux AMD64 安装包并签名。
+4. 三种安装包及签名齐全后，发布 `v2.5.10-Plus` 和 `latest.json`。
 
-| 版本        | 特征                                     | 链接                                                                                   |
-| :---------- | :--------------------------------------- | :------------------------------------------------------------------------------------- |
-| Stable      | 正式版，高可靠性，适合日常使用。         | [Release](https://github.com/clash-verge-rev/clash-verge-rev/releases)                 |
-| Alpha(废弃) | 测试发布流程。                           | [Alpha](https://github.com/clash-verge-rev/clash-verge-rev/releases/tag/alpha)         |
-| AutoBuild   | 滚动更新版，适合测试反馈，可能存在缺陷。 | [AutoBuild](https://github.com/clash-verge-rev/clash-verge-rev/releases/tag/autobuild) |
+已发布的同版本会跳过；同一提交留下的草稿可以重试。同步下一个官方稳定版源码后，构建使用新的源码版本号。`-Plus` 在 SemVer 中属于预发布后缀，但该发布流程将 GitHub Release 标记为正式版，以便客户端发现更新。
 
-#### 安装说明和常见问题，请到 [文档页](https://clash-verge-rev.github.io/) 查看
+官方工作流及辅助脚本保留，各入口任务限定在官方仓库运行。在本仓库仅 `release-plus.yml` 执行，其他工作流可能显示为已跳过。后续合并上游时，保留这些条件，并检查新增的独立工作流。
 
-### TG 频道: [@clash_verge_rev](https://t.me/clash_verge_re)
+发布前在仓库 Actions Secrets 中配置：
 
----
+| 名称 | 内容 |
+| --- | --- |
+| `TAURI_PRIVATE_KEY` | Tauri 更新签名私钥的完整内容 |
+| `TAURI_KEY_PASSWORD` | 私钥密码 |
 
-## Promotion
+对应公钥已写入客户端配置。私钥和密码保存在仓库外，并妥善备份；后续版本继续使用同一对密钥。
 
-### ✈️ [AI云边 -- 全新架构机场 ClaudeBorder](https://cruise.54678999.xyz/#/register?code=58q5UJZc)
+## 本地开发
 
-🔥热销中使用本链接注册即送 **3 天免费试用**，每日 **1GB 流量**：👉 [点此注册](https://cruise.54678999.xyz/#/register?code=58q5UJZc)
-
-#### AI云边 -- 全新架构机场。
-
-- 💻 多次**技术迭代后**全新亮相。
-- 🗺 全**高速稳定**正价节点。
-- 🌏 **海外团队**，不跑路
-- 🚀 线路**冗余**设计，**自动化运维**对抗各类封锁
-- 👨‍🦲 团队架构师为**大厂**网络架构师
-- 💰 极致**稳定**，亲民价**价格**
-- 🌐 全面支持**流媒体及各AI访问**
-- 🙋 7*12小时真人客服。解决您的各类问题。
-
-🌐 官网：👉 [https://www.claudeborder.com](https://cruise.54678999.xyz/#/register?code=58q5UJZc)
-
-### 🤖 [GPTKefu —— 与 Crisp 深度整合的 AI 智能客服平台](https://gptkefu.com)
-
-- 🧠 深度理解完整对话上下文 + 图片识别，自动给出专业、精准的回复，告别机械式客服。
-- ♾️ **不限回答数量**，无额度焦虑，区别于其他按条计费的 AI 客服产品。
-- 💬 售前咨询、售后服务、复杂问题解答，全场景轻松覆盖，真实用户案例已验证效果。
-- ⚡ 3 分钟极速接入，零门槛上手，即刻提升客服效率与客户满意度。
-- 🎁 高级套餐免费试用 14 天，先体验后付费：👉 [立即试用](https://gptkefu.com)
-- 📢 智能客服TG 频道：[@crisp_ai](https://t.me/crisp_ai)
-
----
-
-## Features
-
-- 基于性能强劲的 Rust 和 Tauri 2 框架
-- 内置[Clash.Meta(mihomo)](https://github.com/MetaCubeX/mihomo)内核，并支持切换 `Alpha` 版本内核。
-- 简洁美观的用户界面，支持自定义主题颜色、代理组/托盘图标以及 `CSS Injection`。
-- 配置文件管理和增强（Merge 和 Script），配置文件语法提示。
-- 系统代理和守卫、`TUN(虚拟网卡)` 模式。
-- 可视化节点和规则编辑
-- WebDav 配置备份和同步
-
-### FAQ
-
-Refer to [Doc FAQ Page](https://clash-verge-rev.github.io/faq/windows.html)
-
-### Donation
-
-[捐助Clash Verge Rev的开发](https://github.com/sponsors/clash-verge-rev)
-
-## Development
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
-
-To run the development server, execute the following commands after all prerequisites for **Tauri** are installed:
+工具版本见 [`.tool-versions`](.tool-versions) 和 [`rust-toolchain.toml`](rust-toolchain.toml)，环境说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ```shell
-pnpm i
-pnpm run prebuild
+pnpm install --frozen-lockfile
+pnpm prebuild
 pnpm dev
 ```
 
-`pnpm dev` preserves the Development Channel's installed service state: an
-existing service is used, while a previously uninstalled service remains
-uninstalled and the app starts in Sidecar mode. Use `pnpm dev:service` to
-explicitly install or update the isolated development service before launch,
-or `pnpm dev:sidecar` to force the unprivileged Sidecar workflow.
+`pnpm prebuild` 从定制 Mihomo 仓库下载内核，需要存在对应 Release 资产。`pnpm dev` 还需要同级的 `clash-verge-service-ipc` 开发源码，具体要求见贡献指南。只调试前端可运行 `pnpm web:dev`。
 
-## Contributions
+`pnpm dev:service` 用于安装或更新隔离的开发服务；`pnpm dev:sidecar` 强制使用 Sidecar 模式。构建或类型检查成功不等于实际代理连接已验收。
 
-Issue and PR welcome!
+## Git 与同步上游
 
-## Acknowledgement
+本地使用浅克隆，两个远端分别用于：
 
-Clash Verge rev was based on or inspired by these projects and so on:
+| 远端 | 用途 |
+| --- | --- |
+| `origin` | 自己的 `Nefelibata-D/Clash-Verge-Rev` 仓库，接收提交 |
+| `upstream` | 官方 `clash-verge-rev/clash-verge-rev` 仓库，获取稳定版更新 |
 
-- [zzzgydi/clash-verge](https://github.com/zzzgydi/clash-verge): A Clash GUI based on tauri. Supports Windows, macOS and Linux.
-- [tauri-apps/tauri](https://github.com/tauri-apps/tauri): Build smaller, faster, and more secure desktop applications with a web frontend.
-- [Dreamacro/clash](https://github.com/Dreamacro/clash): A rule-based tunnel in Go.
-- [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo): A rule-based tunnel in Go.
-- [Fndroid/clash_for_windows_pkg](https://github.com/Fndroid/clash_for_windows_pkg): A Windows/macOS GUI based on Clash.
-- [vitejs/vite](https://github.com/vitejs/vite): Next generation frontend tooling. It's fast!
+日常提交后正常推送即可：
 
-## Privacy
+```shell
+git push origin main
+```
 
-Clash Verge Rev 不收集任何用户数据，配置与日志仅保存在本地。详见[隐私政策](./PRIVACY.md)。
+本工作区已配置默认推送到 `origin`，因此 `git push` 也指向自己的仓库。`main` 的拉取跟踪仍为 `upstream/main`；`git pull` 获取的是官方更新，不是自己 GitHub 仓库上的改动。
 
-Clash Verge Rev does not collect any user data; configuration and logs stay on
-your own device. See the [Privacy Policy](./PRIVACY.md) for details.
+同步官方更新前先提交本地工作，再执行：
 
-## License
+```shell
+git fetch upstream main
+git merge upstream/main
+```
 
-GPL-3.0 License. See [License here](./LICENSE) for details.
+若浅历史不足以找到共同祖先，先按需加深，再合并：
+
+```shell
+git fetch --deepen=50 upstream main
+```
+
+合并时处理冲突，保留定制修改、公钥与工作流仓库判断，并核对源码版本。不要使用整仓覆盖或强制重置替代合并。
+
+## 上游与许可
+
+感谢 [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev)、[Clash Verge](https://github.com/zzzgydi/clash-verge)、[Mihomo](https://github.com/MetaCubeX/mihomo)、[Tauri](https://github.com/tauri-apps/tauri) 和 [Vite](https://github.com/vitejs/vite) 等上游项目。
+
+本项目遵循 [GPL-3.0 许可证](LICENSE)。隐私说明见 [PRIVACY.md](PRIVACY.md)。

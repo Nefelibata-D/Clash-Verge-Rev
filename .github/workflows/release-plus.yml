@@ -3,6 +3,7 @@ name: Release Plus
 on:
   push:
     branches: [main]
+    paths: [package.json]
   workflow_dispatch:
 
 permissions:
@@ -35,6 +36,23 @@ jobs:
             const { version: sourceVersion } = JSON.parse(readFileSync('package.json', 'utf8'));
             if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(sourceVersion)) {
               throw new Error(`Expected a stable package.json version: ${sourceVersion}`);
+            }
+            if (context.eventName === 'push') {
+              const before = context.payload.before;
+              if (/^0+$/.test(before)) {
+                core.info('Initial push; use workflow_dispatch for the first release.');
+                core.setOutput('publish', false);
+                return;
+              }
+              const { data } = await github.rest.repos.getContent({
+                ...context.repo, path: 'package.json', ref: before,
+              });
+              const previous = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
+              if (previous.version === sourceVersion) {
+                core.info('Source version unchanged; skipping.');
+                core.setOutput('publish', false);
+                return;
+              }
             }
             const version = `${sourceVersion}-Plus`;
             const tag = `v${version}`;
