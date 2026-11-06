@@ -30,7 +30,6 @@ const packages = []
 for (const [extension, targets] of [
   ['.exe', ['windows-x86_64', 'windows-x86_64-nsis']],
   ['.deb', ['linux-x86_64', 'linux-x86_64-deb']],
-  ['.rpm', ['linux-x86_64-rpm']],
 ]) {
   const matches = files.filter((file) => file.endsWith(extension))
   if (matches.length !== 1)

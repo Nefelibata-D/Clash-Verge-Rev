@@ -11,7 +11,9 @@
 | 平台 | 架构 | 安装包 |
 | --- | --- | --- |
 | Windows | x86-64 / AMD64 | NSIS `.exe` |
-| Linux | x86-64 / AMD64 | `.deb`、`.rpm` |
+| Linux | x86-64 / AMD64 | `.deb` |
+
+Debian/Ubuntu 系统可用 `sudo apt install ./安装包.deb` 安装；需要系统满足包依赖。这里只提供下载包，不提供 APT 软件源。
 
 当前发布流程只构建上述平台，不构建 macOS、ARM、32 位 x86 或内置 WebView2 版本。
 
