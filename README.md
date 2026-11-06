@@ -29,16 +29,11 @@
 
 源码以官方 `main` 稳定分支为基础，当前基线为 `v2.5.10`（`c83f7ad`）。源码中的版本号保持官方值，例如 `2.5.10`。
 
-[Release Plus](.github/workflows/release-plus.yml) 只在推送 `main` 且 `package.json` 版本号变化时自动构建发布。README、其他源码改动不会触发；只修改依赖但版本号不变时，版本检查后跳过构建。首次推送不自动发布，首次发布或失败重试可手动触发。
+[Release Plus](.github/workflows/release-plus.yml) 在推送四段版本标签时发布，例如 `v2.5.10.1`。前三段必须与源码 `package.json` 的上游版本一致；第四段是自定义修订号，从 1 开始递增，升级上游基线后重新从 1 开始。普通分支推送不触发发布。
 
-发布流程：
+Cargo/Tauri 要求 SemVer，因此 CI 将应用内部版本写为 `2.5.10-1`，统一更新 package.json、Tauri 配置、Cargo.toml 和 Cargo.lock，不提交回仓库。`latest.json` 使用同一内部版本进行更新比较，下载地址指向四段发布标签。诊断内核仍由 Mihomo 的同一 Release 提供。
 
-1. 读取当前源码 `package.json` 的版本号，不联网查询官方版本。
-2. 仅在 CI 构建工作区中，将四处版本信息统一改成 `2.5.10-Plus` 这样的版本；不提交回仓库。
-3. 构建 Windows 和 Linux AMD64 安装包并签名。
-4. 三种安装包及签名齐全后，发布 `v2.5.10-Plus` 和 `latest.json`。
-
-已发布的同版本会跳过；同一提交留下的草稿可以重试。同步下一个官方稳定版源码后，构建使用新的源码版本号。`-Plus` 在 SemVer 中属于预发布后缀，但该发布流程将 GitHub Release 标记为正式版，以便客户端发现更新。
+Windows/Linux AMD64 安装包与签名齐全后才发布。已发布版本跳过，同一提交的草稿可通过重新运行失败的 Actions 重试。`N` 是 SemVer 预发布标识，但 GitHub Release 标记为正式版供客户端发现更新。
 
 官方工作流及辅助脚本保留，各入口任务限定在官方仓库运行。在本仓库仅 `release-plus.yml` 执行，其他工作流可能显示为已跳过。后续合并上游时，保留这些条件，并检查新增的独立工作流。
 

@@ -1,9 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises'
 
 const version = process.argv[2]?.replace(/^v/, '')
-if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-Plus$/.test(version ?? '')) {
+if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-([1-9]\d*)$/.test(version ?? '')) {
   throw new Error(
-    'Expected an official stable version with -Plus, e.g. 2.5.10-Plus',
+    'Expected an official stable version with a revision, e.g. 2.5.10-1',
   )
 }
 

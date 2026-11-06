@@ -2,9 +2,8 @@ name: Release Plus
 
 on:
   push:
-    branches: [main]
-    paths: [package.json]
-  workflow_dispatch:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
   contents: read
@@ -19,7 +18,7 @@ env:
 
 jobs:
   version:
-    if: github.repository == 'Nefelibata-D/Clash-Verge-Rev' && github.ref == 'refs/heads/main'
+    if: github.repository == 'Nefelibata-D/Clash-Verge-Rev'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -37,25 +36,12 @@ jobs:
             if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(sourceVersion)) {
               throw new Error(`Expected a stable package.json version: ${sourceVersion}`);
             }
-            if (context.eventName === 'push') {
-              const before = context.payload.before;
-              if (/^0+$/.test(before)) {
-                core.info('Initial push; use workflow_dispatch for the first release.');
-                core.setOutput('publish', false);
-                return;
-              }
-              const { data } = await github.rest.repos.getContent({
-                ...context.repo, path: 'package.json', ref: before,
-              });
-              const previous = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
-              if (previous.version === sourceVersion) {
-                core.info('Source version unchanged; skipping.');
-                core.setOutput('publish', false);
-                return;
-              }
+            const tag = context.ref.replace(/^refs\/tags\//, '');
+            const match = /^v((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))\.([1-9]\d*)$/.exec(tag);
+            if (!match || match[1] !== sourceVersion) {
+              throw new Error(`Expected v${sourceVersion}.N with N >= 1: ${tag}`);
             }
-            const version = `${sourceVersion}-Plus`;
-            const tag = `v${version}`;
+            const version = `${sourceVersion}-${match[2]}`;
             let release;
             try {
               ({ data: release } = await github.rest.repos.getReleaseByTag({ ...context.repo, tag }));
@@ -104,7 +90,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libxslt1.1 libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf rpm
       - run: pnpm install --frozen-lockfile
-      - name: Set upstream stable version with Plus suffix
+      - name: Set SemVer application version
         env:
           RELEASE_VERSION: ${{ needs.version.outputs.version }}
         shell: bash
@@ -157,9 +143,9 @@ jobs:
       - name: Publish complete release
         run: |
           if [ "$EXISTING_DRAFT" != true ]; then
-            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --draft \
+            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --verify-tag --draft \
               --title "Clash Verge Rev $RELEASE_TAG" \
-              --notes "Windows and Linux AMD64. Version follows official stable ${RELEASE_VERSION%-Plus}."
+              --notes "Windows and Linux AMD64. Version follows official stable ${RELEASE_VERSION%-*}."
           fi
           gh release upload "$RELEASE_TAG" release-assets/* --clobber
           gh release edit "$RELEASE_TAG" --draft=false --prerelease=false --latest

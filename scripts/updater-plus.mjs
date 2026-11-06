@@ -3,10 +3,11 @@ import path from 'node:path'
 
 const [input, output] = process.argv.slice(2)
 const version = process.env.RELEASE_VERSION
+const tag = version?.replace(/^(\d+\.\d+\.\d+)-(\d+)$/, 'v$1.$2')
 const repository = process.env.GITHUB_REPOSITORY
-if (!input || !output || !/^\d+\.\d+\.\d+-Plus$/.test(version ?? '')) {
+if (!input || !output || !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-([1-9]\d*)$/.test(version ?? '')) {
   throw new Error(
-    'Usage: RELEASE_VERSION=X.Y.Z-Plus node scripts/updater.mjs <bundles> <output>',
+    'Usage: RELEASE_VERSION=X.Y.Z-N node scripts/updater-plus.mjs <bundles> <output>',
   )
 }
 if (!/^[\w.-]+\/[\w.-]+$/.test(repository ?? '')) {
@@ -42,7 +43,7 @@ for (const [extension, targets] of [
   const name = path.basename(file)
   const entry = {
     signature,
-    url: `https://github.com/${repository}/releases/download/v${version}/${encodeURIComponent(name)}`,
+    url: `https://github.com/${repository}/releases/download/${tag}/${encodeURIComponent(name)}`,
   }
   for (const target of targets) platforms[target] = entry
   packages.push(file, `${file}.sig`)
