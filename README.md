@@ -27,27 +27,6 @@ Debian/Ubuntu 系统可用 `sudo apt install ./安装包.deb` 安装；需要系
 
 定制内核的普通版和诊断 beta 版位于同一个 Release。客户端原有的 Alpha 内核入口对应诊断 beta 版；其包名为 `mihomo-windows-amd64-<version>.zip` 或 `mihomo-linux-amd64-<version>.gz`。新版黑名单 `rules` 字段需要较新的定制内核。
 
-## 版本与自动发布
-
-源码以官方 `main` 稳定分支为基础，当前基线为 `v2.5.10`（`c83f7ad`）。源码中的版本号保持官方值，例如 `2.5.10`。
-
-[Release Plus](.github/workflows/release-plus.yml) 在推送四段版本标签时发布，例如 `v2.5.10.1`。前三段必须与源码 `package.json` 的上游版本一致；第四段是自定义修订号，从 1 开始递增，升级上游基线后重新从 1 开始。普通分支推送不触发发布。
-
-Cargo/Tauri 要求 SemVer，因此 CI 将应用内部版本写为 `2.5.10-1`，统一更新 package.json、Tauri 配置、Cargo.toml 和 Cargo.lock，不提交回仓库。`latest.json` 使用同一内部版本进行更新比较，下载地址指向四段发布标签。诊断内核仍由 Mihomo 的同一 Release 提供。
-
-Windows/Linux AMD64 安装包与签名齐全后才发布。已发布版本跳过，同一提交的草稿可通过重新运行失败的 Actions 重试。`N` 是 SemVer 预发布标识，但 GitHub Release 标记为正式版供客户端发现更新。
-
-官方工作流及辅助脚本保留，各入口任务限定在官方仓库运行。在本仓库仅 `release-plus.yml` 执行，其他工作流可能显示为已跳过。后续合并上游时，保留这些条件，并检查新增的独立工作流。
-
-发布前在仓库 Actions Secrets 中配置：
-
-| 名称 | 内容 |
-| --- | --- |
-| `TAURI_PRIVATE_KEY` | Tauri 更新签名私钥的完整内容 |
-| `TAURI_KEY_PASSWORD` | 私钥密码 |
-
-对应公钥已写入客户端配置。私钥和密码保存在仓库外，并妥善备份；后续版本继续使用同一对密钥。
-
 ## 本地开发
 
 工具版本见 [`.tool-versions`](.tool-versions) 和 [`rust-toolchain.toml`](rust-toolchain.toml)，环境说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。

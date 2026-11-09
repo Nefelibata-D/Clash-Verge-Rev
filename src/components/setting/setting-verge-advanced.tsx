@@ -16,6 +16,7 @@ import {
 import { mutate } from '@/services/mutate'
 import { showNotice } from '@/services/notice-service'
 import { checkUpdateSafe as checkUpdate } from '@/services/update'
+import { formatAppVersion } from '@/utils/format-app-version'
 import { version } from '@root/package.json'
 
 import { BackupViewer } from './mods/backup-viewer'
@@ -43,6 +44,7 @@ const SettingVergeAdvanced = ({ onError: _ }: Props) => {
   const updateRef = useRef<DialogRef>(null)
   const backupRef = useRef<DialogRef>(null)
   const liteModeRef = useRef<DialogRef>(null)
+  const displayVersion = formatAppVersion(version)
 
   const onCheckUpdate = async () => {
     try {
@@ -70,13 +72,13 @@ const SettingVergeAdvanced = ({ onError: _ }: Props) => {
   }, [])
 
   const copyVersion = useCallback(() => {
-    navigator.clipboard.writeText(`v${version}`).then(() => {
+    navigator.clipboard.writeText(`v${displayVersion}`).then(() => {
       showNotice.success(
         'settings.components.verge.advanced.notifications.versionCopied',
         1000,
       )
     })
-  }, [])
+  }, [displayVersion])
 
   return (
     <SettingList title={t('settings.components.verge.advanced.title')}>
@@ -182,7 +184,7 @@ const SettingVergeAdvanced = ({ onError: _ }: Props) => {
           />
         }
       >
-        <Typography sx={{ py: '7px', pr: 1 }}>v{version}</Typography>
+        <Typography sx={{ py: '7px', pr: 1 }}>v{displayVersion}</Typography>
       </SettingItem>
     </SettingList>
   )

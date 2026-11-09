@@ -39,24 +39,28 @@ for (const [extension, targets] of [
   const file = matches[0]
   const signature = (await readFile(`${file}.sig`, 'utf8')).trim()
   if (!signature) throw new Error(`Empty signature for ${file}`)
-  const name = path.basename(file)
+  const sourceName = path.basename(file)
+  const versionField = `_${version}_`
+  if (!sourceName.includes(versionField))
+    throw new Error(`Installer name does not contain ${versionField}: ${sourceName}`)
+  const name = sourceName.replace(versionField, `_${tag.slice(1)}_`)
   const entry = {
     signature,
     url: `https://github.com/${repository}/releases/download/${tag}/${encodeURIComponent(name)}`,
   }
   for (const target of targets) platforms[target] = entry
-  packages.push(file, `${file}.sig`)
+  packages.push([file, name], [`${file}.sig`, `${name}.sig`])
 }
 
 await mkdir(output, { recursive: true })
-for (const file of packages)
-  await copyFile(file, path.join(output, path.basename(file)))
+for (const [file, name] of packages)
+  await copyFile(file, path.join(output, name))
 await writeFile(
   path.join(output, 'latest.json'),
   JSON.stringify(
     {
       version,
-      notes: `Clash Verge Rev ${version} for Windows and Linux AMD64.`,
+      notes: `Clash Verge Rev ${tag.slice(1)} for Windows and Linux AMD64.`,
       pub_date: new Date().toISOString(),
       platforms,
     },
