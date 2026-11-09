@@ -5,7 +5,11 @@ const [input, output] = process.argv.slice(2)
 const version = process.env.RELEASE_VERSION
 const tag = version?.replace(/^(\d+\.\d+\.\d+)-(\d+)$/, 'v$1.$2')
 const repository = process.env.GITHUB_REPOSITORY
-if (!input || !output || !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-([1-9]\d*)$/.test(version ?? '')) {
+if (
+  !input ||
+  !output ||
+  !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-([1-9]\d*)$/.test(version ?? '')
+) {
   throw new Error(
     'Usage: RELEASE_VERSION=X.Y.Z-N node scripts/updater-plus.mjs <bundles> <output>',
   )
@@ -42,8 +46,12 @@ for (const [extension, targets] of [
   const sourceName = path.basename(file)
   const versionField = `_${version}_`
   if (!sourceName.includes(versionField))
-    throw new Error(`Installer name does not contain ${versionField}: ${sourceName}`)
-  const name = sourceName.replace(versionField, `_${tag.slice(1)}_`)
+    throw new Error(
+      `Installer name does not contain ${versionField}: ${sourceName}`,
+    )
+  const name = sourceName
+    .replace(versionField, `_${tag.slice(1)}_`)
+    .replaceAll(' ', '.')
   const entry = {
     signature,
     url: `https://github.com/${repository}/releases/download/${tag}/${encodeURIComponent(name)}`,

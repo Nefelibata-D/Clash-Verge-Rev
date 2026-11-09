@@ -23,6 +23,7 @@ import {
 import { mutate } from '@/services/mutate'
 import { showNotice } from '@/services/notice-service'
 import { useSetUpdateState, useUpdateState } from '@/services/states'
+import { formatAppVersion } from '@/utils/format-app-version'
 import { openExternalUrl } from '@/utils/open-external-url'
 
 type MarkdownNode = {
@@ -319,7 +320,7 @@ export function UpdateViewer({ ref }: { ref?: Ref<DialogRef> }) {
             }}
           >
             {t('settings.modals.update.title', {
-              version: updateInfo?.version ?? '',
+              version: formatAppVersion(updateInfo?.version ?? ''),
             })}
           </Box>
           <Button
@@ -328,7 +329,7 @@ export function UpdateViewer({ ref }: { ref?: Ref<DialogRef> }) {
             sx={{ whiteSpace: 'nowrap' }}
             onClick={() => {
               openUrlWithNotice(
-                `https://github.com/Nefelibata-D/Clash-Verge-Rev/releases/tag/v${updateInfo?.version}`,
+                `https://github.com/Nefelibata-D/Clash-Verge-Rev/releases/tag/v${formatAppVersion(updateInfo?.version ?? '')}`,
               )
             }}
           >
