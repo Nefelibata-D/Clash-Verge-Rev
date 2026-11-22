@@ -105,11 +105,13 @@ a Minisign public key compiled into the application.
 
 Disable it in *Settings → Miscellaneous → Auto Check Update*.
 
-### 4.4 Proxy core update — *user-initiated*
+### 4.4 Proxy core updates
 
-Updating the mihomo core downloads it from GitHub Releases
-(`https://github.com/MetaCubeX/mihomo/releases/…`) only when you start the
-update.
+Manual updates and the optional *Automatically check for and download Mihomo updates*
+setting use GitHub Releases for `Nefelibata-D/Mihomo`. The setting is off by default.
+When enabled, the daily application update task can download the selected core in
+the background. The next launch offers to install the cached core. An application
+update takes priority and discards the pending core download.
 
 ### 4.5 IP information card — *enabled by default*
 

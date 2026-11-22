@@ -163,6 +163,9 @@ pub(super) async fn apply(config_write: &MutexGuard<'_, ()>, patch: Patch<'_>, e
     transaction.commit();
     match patch {
         Patch::Verge { patch, .. } => {
+            if patch.auto_check_core_update == Some(false) {
+                crate::feat::core_upgrade::automatic::discard_pending_logged();
+            }
             if patch.auto_check_update == Some(false) {
                 SilentUpdater::global().discard_pending();
             }

@@ -1118,6 +1118,7 @@ export interface TranslationResources {
             appLogLevel: string
             appLogMaxCount: string
             appLogMaxSize: string
+            autoCheckCoreUpdate: string
             autoCheckUpdate: string
             autoCloseConnections: string
             autoDelayDetection: string

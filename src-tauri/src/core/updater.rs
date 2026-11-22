@@ -1,3 +1,4 @@
+use crate::feat::core_upgrade::automatic;
 use crate::{config::Config, singleton, utils::dirs};
 use anyhow::{Context as _, Result};
 use chrono::Utc;
@@ -313,7 +314,7 @@ async fn download_from(
 impl SilentUpdater {
     /// Checks the server; Windows receives `/LANG` to suppress the NSIS language dialog,
     /// see `packages/windows/installer.nsi`.
-    async fn check(app_handle: &tauri::AppHandle) -> Result<Option<Update>> {
+    pub(crate) async fn check(app_handle: &tauri::AppHandle) -> Result<Option<Update>> {
         let updater_builder = app_handle.updater_builder();
         #[cfg(target_os = "windows")]
         let updater_builder = {
@@ -332,6 +333,7 @@ impl SilentUpdater {
     pub async fn try_install_on_startup(&self, app_handle: &tauri::AppHandle) -> bool {
         if !Config::verge().await.latest_arc().auto_check_update.unwrap_or(true) {
             Self::delete_cache();
+            automatic::check_on_startup(app_handle).await;
             return false;
         }
 
@@ -339,7 +341,10 @@ impl SilentUpdater {
 
         let meta = match Self::read_cache_meta() {
             Ok(meta) => meta,
-            Err(_) => return false, // No cache, nothing to do
+            Err(_) => {
+                automatic::check_on_startup(app_handle).await;
+                return false;
+            }
         };
 
         let cached_version = &meta.version;
@@ -353,6 +358,7 @@ impl SilentUpdater {
                 current_version
             );
             Self::delete_cache();
+            automatic::check_on_startup(app_handle).await;
             return false;
         }
 
@@ -365,7 +371,9 @@ impl SilentUpdater {
         );
 
         // Preserve the cache when skipped so the next launch asks again.
-        if !Self::ask_user_to_install(app_handle, cached_version).await {
+        automatic::discard_pending_logged();
+        let title = clash_verge_i18n::t!("notifications.updateReady.title");
+        if !Self::ask_user_to_install(app_handle, cached_version, &title).await {
             logging!(info, Type::System, "User skipped update install, starting normally");
             return false;
         }
@@ -446,6 +454,7 @@ impl SilentUpdater {
         };
 
         logging!(info, Type::System, "Installing update v{version}...");
+        automatic::discard_pending_logged();
         Self::install(update, bytes).await?;
         Self::delete_cache();
         Ok(true)
@@ -486,10 +495,9 @@ impl SilentUpdater {
 }
 
 impl SilentUpdater {
-    async fn ask_user_to_install(app_handle: &tauri::AppHandle, version: &str) -> bool {
+    pub(crate) async fn ask_user_to_install(app_handle: &tauri::AppHandle, version: &str, title: &str) -> bool {
         use tauri_plugin_dialog::{DialogExt as _, MessageDialogButtons, MessageDialogKind};
 
-        let title = clash_verge_i18n::t!("notifications.updateReady.title");
         let body = clash_verge_i18n::t!("notifications.updateReady.body").replace("{version}", version);
         let install_now = clash_verge_i18n::t!("notifications.updateReady.installNow").into_owned();
         let later = clash_verge_i18n::t!("notifications.updateReady.later").into_owned();
@@ -600,7 +608,7 @@ impl SilentUpdater {
         let auto_check = Config::verge().await.latest_arc().auto_check_update.unwrap_or(true);
         if !auto_check {
             logging!(debug, Type::System, "Silent update skipped: auto_check_update is false");
-            return Ok(());
+            return automatic::prepare().await;
         }
 
         if self.is_update_ready() {
@@ -615,7 +623,7 @@ impl SilentUpdater {
             Ok(Some(update)) => update,
             Ok(None) => {
                 logging!(info, Type::System, "Silent updater: no update available");
-                return Ok(());
+                return automatic::prepare().await;
             }
             Err(e) => {
                 logging!(warn, Type::System, "Silent updater: check failed: {e}");
@@ -623,6 +631,7 @@ impl SilentUpdater {
             }
         };
 
+        automatic::discard_pending_logged();
         let version = update.version.clone();
         logging!(info, Type::System, "Silent updater: update available: v{version}");
 

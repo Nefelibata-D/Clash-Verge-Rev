@@ -30,6 +30,7 @@ notifications:
     title: About to Exit
     body: Clash Verge is about to exit.
   updateReady:
+    coreTitle: Mihomo Update
     title: Clash Verge Update
     body: A new version (v{version}) has been downloaded and is ready to install.
     installNow: Install Now

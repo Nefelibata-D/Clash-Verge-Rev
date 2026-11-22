@@ -412,6 +412,7 @@
         "appLogMaxCount": "App Log Max Count",
         "autoCloseConnections": "Auto Close Connections",
         "autoCheckUpdate": "Auto Check Update",
+        "autoCheckCoreUpdate": "Automatically check for and download Mihomo updates",
         "enableBuiltinEnhanced": "Enable Builtin Enhanced",
         "proxyLayoutColumns": "Proxy Layout Columns",
         "autoLogClean": "Auto Log Clean",

@@ -29,9 +29,9 @@ Debian/Ubuntu 系统可用 `sudo apt install ./安装包.deb` 安装；需要系
 
 ## 版本与打包
 
-当前定制发布版本为 `v2.5.10.3`，源码基础版本保持 `2.5.10`。推送四段版本标签触发 [Release Plus](.github/workflows/release-plus.yml)，CI 将应用内部版本统一设为 `2.5.10-3`，构建 Windows NSIS 和 Linux DEB 安装包。
+当前定制发布版本为 `v2.5.10.4`，源码基础版本保持 `2.5.10`。推送四段版本标签触发 [Release Plus](.github/workflows/release-plus.yml)，CI 将应用内部版本统一设为 `2.5.10-4`，构建 Windows NSIS 和 Linux DEB 安装包。
 
-打包时从 `Nefelibata-D/Mihomo` 的最新 Release 获取普通内核和诊断 beta 内核；准备本版时最新内核为 `v1.19.33.4`。仅提交代码或创建本地标签不会触发打包，需要推送发布标签。
+打包时从 `Nefelibata-D/Mihomo` 的最新 Release 获取普通内核和诊断 beta 内核。仅提交代码或创建本地标签不会触发打包，需要推送发布标签。
 
 ## 本地开发
 

@@ -1,7 +1,7 @@
 mod backup;
 mod clash;
 mod config;
-mod core_upgrade;
+pub(crate) mod core_upgrade;
 mod dns;
 mod effects;
 mod executor;

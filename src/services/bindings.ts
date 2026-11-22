@@ -401,6 +401,7 @@ export type IVerge_Deserialize = {
   home_cards?: JsonValue | null
   auto_close_connection?: boolean | null
   auto_check_update?: boolean | null
+  auto_check_core_update?: boolean | null
   default_latency_test?: string | null
   default_latency_timeout?: number | null
   enable_auto_delay_detection?: boolean | null
@@ -491,6 +492,7 @@ export type IVerge_Serialize = {
   home_cards: JsonValue | null
   auto_close_connection: boolean | null
   auto_check_update: boolean | null
+  auto_check_core_update: boolean | null
   default_latency_test: string | null
   default_latency_timeout: number | null
   enable_auto_delay_detection: boolean | null

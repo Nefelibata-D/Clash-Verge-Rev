@@ -6,6 +6,8 @@
 //! copy beside the managed core and renames it into place: `rename` never touches the inode
 //! the running core is executing from, so no page validation can fail.
 
+pub(crate) mod automatic;
+
 use crate::{
     config::Config,
     core::{CoreManager, manager::RunningMode},
@@ -52,7 +54,7 @@ pub async fn upgrade_core(force: bool) -> Result<CoreUpgradeReport> {
         std::string::String::new()
     });
 
-    let (proxy, latest) = resolve_latest_version(alpha).await?;
+    let (proxy, latest, _) = resolve_latest_version(alpha).await?;
     let span = tracing::Span::current();
     span.record("from", tracing::field::display(&installed));
     span.record("to", tracing::field::display(&latest));
@@ -65,25 +67,29 @@ pub async fn upgrade_core(force: bool) -> Result<CoreUpgradeReport> {
     let package = download_package(proxy, alpha, &latest).await?;
     let staged = stage_core(&target, &package, &latest)?;
 
+    install_staged(&core, &target, &installed, staged).await
+}
+
+async fn install_staged(core: &str, target: &Path, installed: &str, staged: StagedCore) -> Result<CoreUpgradeReport> {
     // A hard link keeps the previous core reachable without touching the inode the running
     // core executes from, so publishing below stays one atomic rename.
     let rollback = target.with_file_name(format!(".{core}.rollback"));
     let _ = std::fs::remove_file(&rollback);
     // Nothing to roll back to when the core we are replacing could not report a version.
-    let restorable = !installed.is_empty() && std::fs::hard_link(&target, &rollback).is_ok();
+    let restorable = !installed.is_empty() && std::fs::hard_link(target, &rollback).is_ok();
 
     // Decided before anything can crash: after a failed restart the mode reads NotRunning, which
     // says nothing about whether this upgrade went through the Service.
     let service_mode = matches!(*CoreManager::global().get_running_mode(), RunningMode::Service);
 
-    let mut result = staged.publish(&target);
+    let mut result = staged.publish(target);
     // The Service executes its own administrator-approved copy, never this file; hand the new
     // bytes over before the restart below asks for them, or a service-mode restart would keep
     // running the previous core while the app reports the new version. Sidecar mode runs the
     // file directly and gets no elevation prompt.
     let service_staging = if result.is_ok() && service_mode {
         result =
-            crate::core::service::stage_approved_core(&target).context("core replaced but not accepted by the service");
+            crate::core::service::stage_approved_core(target).context("core replaced but not accepted by the service");
         if result.is_ok() {
             ServiceStaging::Succeeded
         } else {
@@ -107,7 +113,7 @@ pub async fn upgrade_core(force: bool) -> Result<CoreUpgradeReport> {
         let core_is_down = matches!(*CoreManager::global().get_running_mode(), RunningMode::NotRunning);
         if restorable
             && (matches!(service_staging, ServiceStaging::Refused) || core_is_down || !target.exists())
-            && std::fs::rename(&rollback, &target).is_ok()
+            && std::fs::rename(&rollback, target).is_ok()
         {
             logging!(warn, Type::Core, "core upgrade: rolled back to {installed:?}");
             // Only a staging that SUCCEEDED left the failing bytes in the approved copy, and only
@@ -117,7 +123,7 @@ pub async fn upgrade_core(force: bool) -> Result<CoreUpgradeReport> {
             // deliberately not gated on the current running mode, which reads NotRunning after
             // the very crash being rolled back.
             if matches!(service_staging, ServiceStaging::Succeeded)
-                && let Err(stage_error) = crate::core::service::stage_approved_core(&target)
+                && let Err(stage_error) = crate::core::service::stage_approved_core(target)
             {
                 logging!(
                     warn,
@@ -195,7 +201,7 @@ fn asset_base_name() -> Result<&'static str> {
 
 /// Returns the proxy that reached GitHub so the package download reuses it.
 #[tracing::instrument(skip_all, level = "debug", fields(alpha))]
-async fn resolve_latest_version(alpha: bool) -> Result<(ProxyType, std::string::String)> {
+async fn resolve_latest_version(alpha: bool) -> Result<(ProxyType, std::string::String, serde_json::Value)> {
     let url = RELEASE_VERSION_URL;
     let mut last_error = None;
 
@@ -222,7 +228,7 @@ async fn resolve_latest_version(alpha: bool) -> Result<(ProxyType, std::string::
                     last_error = Some(anyhow!("{url} returned an unusable version"));
                     continue;
                 }
-                return Ok((proxy, version));
+                return Ok((proxy, version, release));
             }
             Ok(response) => {
                 logging!(

@@ -83,13 +83,15 @@ async fn resolve_setup() {
     });
 
     let _ = futures::join!(
-        core_init,
+        async {
+            let _ = core_init.await;
+            init_silent_updater().await;
+        },
         init_tray(),
         init_timer(),
         init_hotkey(),
         init_auto_lightweight_boot(),
         init_auto_backup(),
-        init_silent_updater(),
     );
 
     Handle::refresh_clash();
@@ -169,15 +171,19 @@ async fn init_auto_backup() {
 async fn init_silent_updater() {
     use crate::core::SilentUpdater;
     use crate::core::handle::Handle;
+    use crate::feat::core_upgrade::automatic;
 
     logging!(debug, Type::Setup, "Initializing silent updater...");
 
     let app_handle = Handle::app_handle();
 
+    logging_error!(Type::Core, automatic::cleanup().await);
+
     // Install cached updates before starting background checks.
     if SilentUpdater::global().try_install_on_startup(app_handle).await {
         logging!(info, Type::Setup, "Update installed at startup, restarting...");
         feat::restart_app().await;
+        return;
     }
 
     let app_handle = app_handle.clone();
